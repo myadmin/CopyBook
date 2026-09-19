@@ -29,11 +29,12 @@ const hanziData = () => ({
   },
   closeBundle() {
     if (!fs.existsSync(HZ_DIR)) return;
+    const src = fs.realpathSync(HZ_DIR); // 解引用 pnpm 的符号链接
     const outDir = path.resolve('dist/hanzi-data');
-    fs.mkdirSync(outDir, { recursive: true });
-    fs.cpSync(HZ_DIR, outDir, {
+    if (fs.existsSync(outDir)) fs.rmSync(outDir, { recursive: true, force: true });
+    fs.cpSync(src, outDir, {
       recursive: true,
-      filter: (src: string) => !src.endsWith('package.json'),
+      filter: (s: string) => !s.endsWith('package.json'),
     });
   },
 });
