@@ -1,10 +1,10 @@
-# GitHub Pages 自动部署：push 到 master 即构建并发布的静态站
+# GitHub Pages 自动部署：push 到 main / master 即构建并发布
 # 仓库需要：Settings → Pages → Build and deployment → Source: GitHub Actions
 name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [master]
+    branches: [main, master]
   workflow_dispatch:
 
 permissions:
