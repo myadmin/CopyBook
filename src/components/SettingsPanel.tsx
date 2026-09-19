@@ -284,7 +284,7 @@ export default function SettingsPanel({ cfg, set }: { cfg: CopybookConfig; set: 
         ))}
         {hanChars.length > 0 && (
           <div className="stroke-preview-box">
-            <div className="hint-line">点字观看笔顺动画并听读音：</div>
+            <div className="hint-line">点字听读音、看逐笔笔顺演示：</div>
             <div className="char-chips">
               {hanChars.map(ch => (
                 <button key={ch} className={previewChar === ch ? 'chip active' : 'chip'}

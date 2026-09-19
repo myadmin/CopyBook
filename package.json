@@ -9,6 +9,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "cnchar": "^3.2.6",
+    "cnchar-order": "^3.2.6",
     "hanzi-writer": "^3.7.3",
     "hanzi-writer-data": "^2.0.1",
     "jszip": "^3.10.2",
