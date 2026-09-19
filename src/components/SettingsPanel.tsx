@@ -9,6 +9,7 @@ import { pinyinCandidates, pinyinMapForText, uniqueHanChars } from '../core/piny
 import { CONTENT_LIBRARY } from '../core/content';
 import { loadTemplates, saveTemplates, type SavedTemplate } from '../core/templates';
 import { clearImportedFont, IMPORTED_FAMILY, importFontFile, importedFontName, subscribeImported } from '../core/fonts';
+import { speakChar } from '../core/speech';
 import StrokePreview from './StrokePreview';
 
 type SetCfg = (patch: Partial<CopybookConfig>) => void;
@@ -283,11 +284,14 @@ export default function SettingsPanel({ cfg, set }: { cfg: CopybookConfig; set: 
         ))}
         {hanChars.length > 0 && (
           <div className="stroke-preview-box">
-            <div className="hint-line">点字观看笔顺动画：</div>
+            <div className="hint-line">点字观看笔顺动画并听读音：</div>
             <div className="char-chips">
               {hanChars.map(ch => (
                 <button key={ch} className={previewChar === ch ? 'chip active' : 'chip'}
-                  onClick={() => setPreviewChar(previewChar === ch ? '' : ch)}>{ch}</button>
+                  onClick={() => {
+                    if (previewChar === ch) setPreviewChar('');
+                    else { setPreviewChar(ch); speakChar(ch); }
+                  }}>{ch}</button>
               ))}
             </div>
             {previewChar && <StrokePreview char={previewChar} />}
