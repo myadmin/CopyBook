@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import SettingsPanel from './components/SettingsPanel';
 import GridSheet from './components/GridSheet';
 import CalligraphySheet from './components/CalligraphySheet';
 import PageNav from './components/PageNav';
-import { DEFAULT_CONFIG, GRID_SPECS, type CopybookConfig } from './core/types';
+import { DEFAULT_CONFIG, type CopybookConfig } from './core/types';
+import { isCalLayout, isRuled, isVertical } from './core/derive';
 import { loadConfig, saveConfig, loadPageSpecHistory, pushPageSpecHistory } from './core/persist';
 import { decodeShare, shareUrl } from './core/share';
 import { restoreImportedFont } from './core/fonts';
@@ -53,7 +54,11 @@ export default function App() {
   const [pageSpec, setPageSpec] = useState(() => loadPageSpecHistory()[0] ?? ''); // 选页导出：「1-2,4」，空 = 全部
   const msgTimer = useRef<number>();
 
-  useEffect(() => { saveConfig(cfg); }, [cfg]);
+  // 键入时每次按键都同步 stringify + 写 localStorage 太重，停顿后再落盘
+  useEffect(() => {
+    const t = window.setTimeout(() => saveConfig(cfg), 400);
+    return () => window.clearTimeout(t);
+  }, [cfg]);
 
   const set = useCallback((patch: Partial<CopybookConfig>) => {
     if (hashSeed.current) { // 用户在链接配置基础上继续编辑：地址栏退回干净 URL
@@ -97,30 +102,33 @@ export default function App() {
     }
   }, [pageSpec, cfg.headerTitle]);
 
-  const wordMode = cfg.grid === 'english';                     // 英语四线格：按单词分格
-  const calLayout = cfg.kind === 'brush' && cfg.brushLayout !== 'grid'; // 毛笔版式
-  const vertical = cfg.writing === 'v' && cfg.brushLayout === 'grid';
-  // 拼音带与笔顺的生效条件与面板提示一致（见 SettingsPanel 的 featureBlocked）
-  const ruled = GRID_SPECS[cfg.grid].ruled; // 横线行款格/英语四线格不支持笔顺分步格
+  const wordMode = cfg.grid === 'english'; // 英语四线格：按单词分格
+  const calLayout = isCalLayout(cfg);      // 毛笔传统版式
+  const vertical = isVertical(cfg);
+  // 拼音带与笔顺的生效条件与面板提示一致（见 derive.ts 的 annotationGate）
+  const ruled = isRuled(cfg); // 横线行款格/英语四线格不支持笔顺分步格
   const strokeEnabled = cfg.strokeMode !== 'off' && !wordMode && !vertical && !calLayout && !ruled;
 
-  const stroke = useStrokeData(cfg.text, strokeEnabled);
+  // 正文与预览解耦：输入框立即响应，拼音/笔顺/分页这些重活延后到空闲帧（不必为每个中间态算一遍）
+  const previewText = useDeferredValue(cfg.text);
+
+  const stroke = useStrokeData(previewText, strokeEnabled);
   const calPlan = useMemo(() => (calLayout ? planCalligraphy(cfg) : null), [cfg, calLayout]);
 
   const pinyin = useMemo(
-    () => pinyinMapForText(cfg.text, cfg.polyphones, cfg.pinyinPlain ? 'none' : 'symbol'),
-    [cfg.text, cfg.polyphones, cfg.pinyinPlain],
+    () => pinyinMapForText(previewText, cfg.polyphones, cfg.pinyinPlain ? 'none' : 'symbol'),
+    [previewText, cfg.polyphones, cfg.pinyinPlain],
   );
 
   const geom = useMemo(() => computeGeometry(cfg), [cfg]);
   const cells = useMemo(
-    () => buildCells(cfg.text, cfg.traceCount, cfg.blankCount, {
+    () => buildCells(previewText, cfg.traceCount, cfg.blankCount, {
       mode: strokeEnabled ? cfg.strokeMode : 'off',
       counts: Object.fromEntries(
         Object.entries(stroke.data).map(([ch, d]) => [ch, d ? d.strokes.length : null]),
       ),
     }, wordMode),
-    [cfg.text, cfg.traceCount, cfg.blankCount, strokeEnabled, cfg.strokeMode, stroke.data, wordMode],
+    [previewText, cfg.traceCount, cfg.blankCount, strokeEnabled, cfg.strokeMode, stroke.data, wordMode],
   );
   const pages = useMemo(() => paginate(cells, geom.cols, geom.rows, vertical), [cells, geom, vertical]);
 

@@ -1,5 +1,6 @@
 // A4 排版与分页算法，全部以 mm 为单位（SVG viewBox 1 单位 = 1mm）
-import { GRID_SPECS, type CopybookConfig, type StrokeMode } from './types';
+import type { CopybookConfig, StrokeMode } from './types';
+import { isRuled, isVertical } from './derive';
 
 export interface Geometry {
   pageW: number;
@@ -34,8 +35,8 @@ export function computeGeometry(cfg: CopybookConfig): Geometry {
   const availH = pageH - 2 * cfg.marginY - headerH;
 
   const cell = Math.max(2, cfg.cellSize);
-  const ruled = GRID_SPECS[cfg.grid].ruled;
-  const vertical = cfg.writing === 'v' && cfg.brushLayout === 'grid';
+  const ruled = isRuled(cfg);
+  const vertical = isVertical(cfg);
   const band = cfg.showPinyin && !ruled && !vertical ? round3(cell * BAND_RATIO) : 0;
   const rowH = round3(cell + band);
   // 手动列数只允许改小、不允许超出页宽能放下的列数，否则格子会印到纸外

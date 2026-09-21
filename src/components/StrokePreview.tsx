@@ -1,6 +1,5 @@
 // 笔顺动画预览：先随读音逐笔演示（横/竖/…与语音同步），再循环整字书写（屏幕专用，不参与打印）
 import { useEffect, useRef, useState } from 'react';
-import HanziWriter from 'hanzi-writer';
 import { loadStrokeData } from '../core/strokes';
 import { loadStrokeNames } from '../core/strokeNames';
 import { charSpeechDone, speak, stopSpeaking } from '../core/speech';
@@ -21,7 +20,10 @@ export default function StrokePreview({ char }: { char: string }) {
     let alive = true;
     let pass = 0; // 演示轮次：重播/换字后，旧循环凭此自停
 
-    Promise.all([loadStrokeData(char), loadStrokeNames(char)]).then(([d, ns]) => {
+    void (async () => {
+      // hanzi-writer 只服务于这个预览，动态引入以挪出首屏包
+      const { default: HanziWriter } = await import('hanzi-writer');
+      const [d, ns] = await Promise.all([loadStrokeData(char), loadStrokeNames(char)]);
       if (!alive || !el) return;
       if (!d) {
         el.innerHTML = '<div class="stroke-err">无此字笔画数据</div>';
@@ -75,7 +77,7 @@ export default function StrokePreview({ char }: { char: string }) {
       };
       narrateRef.current = () => narrate(true);
       narrate(false);
-    });
+    })();
 
     return () => {
       alive = false;

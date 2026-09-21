@@ -6,7 +6,6 @@
 // 分片，fetch 成 base64 内联进导出的 SVG——通常一页只需嵌 1~3 个分片。
 // 系统安装字体（楷体 KaiTi、隶书等）在 <img> 内可直接引用，无需内联。
 
-import JSZip from 'jszip';
 import { importedFontCss } from './fonts';
 
 export interface ExportStats {
@@ -188,6 +187,7 @@ export async function exportSheetsAsPng(dpi = 300, pageSpec = '', title = ''): P
   const zipped = blobs.length > 1;
   const stem = fileStem(title);
   if (zipped) {
+    const { default: JSZip } = await import('jszip'); // 只有多页导出才用得上，动态引入避免进首屏包
     const zip = new JSZip();
     blobs.forEach((b, i) => zip.file(`${stem}_第${pages[i]}页.png`, b));
     download(await zip.generateAsync({ type: 'blob' }), `${stem}_${pages.length}页.zip`);

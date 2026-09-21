@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import type { Cell } from '../core/layout';
 import type { CopybookConfig } from '../core/types';
 import { GRID_SPECS } from '../core/types';
+import { isVertical } from '../core/derive';
 import type { Geometry } from '../core/layout';
 import type { StrokeData } from '../core/strokes';
 import { luma } from '../core/color';
@@ -25,7 +26,7 @@ export default function GridSheet({
   const lw = cfg.gridLineWidth;
   const dashLen = f(Math.max(0.7, cell * 0.05));
   const usedW = cols * cell;
-  const vertical = cfg.writing === 'v' && cfg.brushLayout === 'grid';
+  const vertical = isVertical(cfg);
   // 碑帖等深色底：拼音、页眉、页码改用浅色，保证可读（浅底维持原色）
   const darkBg = cfg.useGridBg && luma(cfg.gridBg) < 0.45;
   const mutedInk = darkBg ? '#e6d9b8' : '#333';
